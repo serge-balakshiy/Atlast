@@ -1,3 +1,6 @@
+#ifndef ATLAST_H
+#define ATLAST_H
+
 /*
 
 			      A T L A S T
@@ -57,7 +60,18 @@ extern atl_int atl_errline;	      /* Line number where last atl_load()
 #define ATL_APPLICATION -14	      /* Application primitive atl_error() */
 
 /*  Entry points  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+void atl_init();
+void atl_mark();
+void atl_unwind();
+void atl_break();
+int atl_eval(char*);
+int atl_load(FILE *);
+void atl_memstat();
 
-extern void atl_init(), atl_mark(), atl_unwind(), atl_break();
-extern int atl_eval(), atl_load();
-extern void atl_memstat();
+#ifdef __cplusplus
+} // extern "C"
+#endif
+#endif // ATLAST_H

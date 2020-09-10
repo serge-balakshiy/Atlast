@@ -60,7 +60,7 @@
 #endif /* NOMEMCHECK */
 #endif /* !INDIVIDUALLY */
 
-
+//
 #include "atldef.h"
 
 #ifdef MATH
@@ -111,7 +111,7 @@ typedef enum {False = 0, True = 1} Boolean;
 
 atl_int atl_stklen = 100;	      /* Evaluation stack length */
 atl_int atl_rstklen = 100;	      /* Return stack length */
-atl_int atl_heaplen = 2000;	      /* Heap length */
+atl_int atl_heaplen = 16000;	      /* Heap length */
 atl_int atl_ltempstr = 256;	      /* Temporary string buffer length */
 atl_int atl_ntempstr = 4;	      /* Number of temporary string buffers */
 
@@ -280,155 +280,155 @@ static int token(cp)
     char *sp = *cp;
 
     while (True) {
-	char *tp = tokbuf;
-	int tl = 0;
-	Boolean istring = False, rstring = False;
+	  char *tp = tokbuf;
+	  int tl = 0;
+	  Boolean istring = False, rstring = False;
 
-	if (atl_comment) {
-            while (*sp != ')') {
-		if (*sp == EOS) {
+	  if (atl_comment) {
+		while (*sp != ')') {
+		  if (*sp == EOS) {
 		    *cp = sp;
 		    return TokNull;
-		}
-		sp++;
+		  }
+		  sp++;
 	    }
 	    sp++;
 	    atl_comment = Falsity;
-	}
+	  }
 
-	while (isspace(*sp))		  /* Skip leading blanks */
+	  while (isspace(*sp))		  /* Skip leading blanks */
 	    sp++;
 
-        if (*sp == '"') {                 /* Is this a string ? */
-
+	  if (*sp == '"') {                 /* Is this a string ? */
+		
 	    /* Assemble string token. */
-
+		
 	    sp++;
 	    while (True) {
-		char c = *sp++;
-
-                if (c == '"') {
+		  char c = *sp++;
+		  
+		  if (c == '"') {
 		    sp++;
 		    *tp++ = EOS;
 		    break;
-		} else if (c == EOS) {
+		  } else if (c == EOS) {
 		    rstring = True;
 		    *tp++ = EOS;
 		    break;
-		}
-                if (c == '\\') {
+		  }
+		  if (c == '\\') {
 		    c = *sp++;
 		    if (c == EOS) {
-			rstring = True;
-			break;
+			  rstring = True;
+			  break;
 		    }
 		    switch (c) {
-                        case 'b':
-                            c = '\b';
-			    break;
-                        case 'n':
-                            c = '\n';
-			    break;
-                        case 'r':
-                            c = '\r';
-			    break;
-                        case 't':
-                            c = '\t';
-			    break;
+			case 'b':
+			  c = '\b';
+			  break;
+			case 'n':
+			  c = '\n';
+			  break;
+			case 'r':
+			  c = '\r';
+			  break;
+			case 't':
+			  c = '\t';
+			  break;
 			default:
-			    break;
+			  break;
 		    }
-		}
-		if (tl < (sizeof tokbuf) - 1) {
-		   *tp++ = c;
-		   tl++;
-		} else {
+		  }
+		  if (tl < (sizeof tokbuf) - 1) {
+			*tp++ = c;
+			tl++;
+		  } else {
 		    rstring = True;
-		}
+		  }
 	    }
 	    istring = True;
-	} else {
+	  } else {
 
 	    /* Scan the next raw token */
 
 	    while (True) {
-		char c = *sp++;
+		  char c = *sp++;
 
-		if (c == EOS || isspace(c)) {
+		  if (c == EOS || isspace(c)) {
 		    *tp++ = EOS;
 		    break;
-		}
-		if (tl < (sizeof tokbuf) - 1) {
+		  }
+		  if (tl < (sizeof tokbuf) - 1) {
 		    *tp++ = c;
 		    tl++;
-		}
+		  }
 	    }
-	}
-	*cp = --sp;			  /* Store end of scan pointer */
-
-	if (istring) {
+	  }
+	  *cp = --sp;			  /* Store end of scan pointer */
+	  
+	  if (istring) {
 	    if (rstring) {
 #ifdef MEMMESSAGE
-                V printf("\nRunaway string: %s\n", tokbuf);
+		  V printf("\nRunaway string: %s\n", tokbuf);
 #endif
-		evalstat = ATL_RUNSTRING;
-		return TokNull;
+		  evalstat = ATL_RUNSTRING;
+		  return TokNull;
 	    }
 	    return TokString;
-	}
+	  }
 
-	if (tokbuf[0] == EOS)
+	  if (tokbuf[0] == EOS)
 	    return TokNull;
 
 	/* See if token is a comment to end of line character.	If so, discard
 	   the rest of the line and return null for this token request. */
 
-        if (strcmp(tokbuf, "\\") == 0) {
+	  if (strcmp(tokbuf, "\\") == 0) {
 	    while (*sp != EOS)
-		sp++;
+		  sp++;
 	    *cp = sp;
 	    return TokNull;
-	}
+	  }
 
 	/* See if this token is a comment open delimiter.  If so, set to
 	   ignore all characters until the matching comment close delimiter. */
 
-        if (strcmp(tokbuf, "(") == 0) {
+	  if (strcmp(tokbuf, "(") == 0) {
 	    while (*sp != EOS) {
-                if (*sp == ')')
+		  if (*sp == ')')
 		    break;
-		sp++;
+		  sp++;
 	    }
-            if (*sp == ')') {
-		sp++;
-		continue;
+		if (*sp == ')') {
+		  sp++;
+		  continue;
 	    }
 	    atl_comment = Truth;
 	    *cp = sp;
 	    return TokNull;
-	}
+	  }
 
 	/* See if the token is a number. */
 
-        if (isdigit(tokbuf[0]) || tokbuf[0] == '-') {
+	  if (isdigit(tokbuf[0]) || tokbuf[0] == '-') {
 	    char tc;
 	    char *tcp;
 
 #ifdef USE_SSCANF
-            if (sscanf(tokbuf, "%li%c", &tokint, &tc) == 1)
-		return TokInt;
+		if (sscanf(tokbuf, "%li%c", &tokint, &tc) == 1)
+		  return TokInt;
 #else
-    	    tokint = strtoul(tokbuf, &tcp, 0);
+		tokint = strtoul(tokbuf, &tcp, 0);
 	    if (*tcp == 0) {
-	    	return TokInt;
+		  return TokInt;
 	    }
 #endif
 #ifdef REAL
-            if (sscanf(tokbuf, "%lf%c", &tokreal, &tc) == 1)
-		return TokReal;
+		if (sscanf(tokbuf, "%lf%c", &tokreal, &tc) == 1)
+		  return TokReal;
 #endif
-	}
-	return TokWord;
+	  }
+	  return TokWord;
     }
 }
 
@@ -440,15 +440,18 @@ static dictword *lookup(tkname)
     dictword *dw = dict;
 
     ucase(tkname);		      /* Force name to upper case */
+//printf("loohup:%s, len=%d ", tkname, strlen(tkname));
     while (dw != NULL) {
-	if (!(dw->wname[0] & WORDHIDDEN) &&
+// printf("lkup %s %d, tk=%d", dw->wname + 1, strlen(dw->wname + 1), strlen(tkname));
+	  if (!(dw->wname[0] & WORDHIDDEN) &&
 	     (strcmp(dw->wname + 1, tkname) == 0)) {
 #ifdef WORDSUSED
 	    *(dw->wname) |= WORDUSED; /* Mark this word used */
 #endif
+//		printf("lookup:find:%s\n", dw->wname);
 	    break;
-	}
-	dw = dw->wnext;
+	  }
+	  dw = dw->wnext;
     }
     return dw;
 }
@@ -833,7 +836,7 @@ prim P_here()			      /* Push current heap address */
 prim P_bang()			      /* Store value into address */
 {
     Sl(2);
-    Hpc(S0);
+//    Hpc(S0);
     *((stackitem *) S0) = S1;
     Pop2;
 }
@@ -841,17 +844,76 @@ prim P_bang()			      /* Store value into address */
 prim P_at()			      /* Fetch value from address */
 {
     Sl(1);
-    Hpc(S0);
+//    Hpc(S0);
     S0 = *((stackitem *) S0);
 }
 
 prim P_plusbang()		      /* Add value at specified address */
 {
     Sl(2);
-    Hpc(S0);
+//    Hpc(S0);
     *((stackitem *) S0) += S1;
     Pop2;
 }
+
+/****
+
+Memory Allocation
+-----------------
+
+By default, cxxforth's data space is 16K cells.  This may be enough for
+moderate needs, but to process large chunks of data it may be insufficent.  One
+way around this is to define `CXXFORTH_DATASPACE_SIZE` to the size you need,
+but a better solution might be to allocate and free memory as needed.
+
+`ALLOCATE`, `RESIZE` and `FREE` are Forth wrappers for C++'s `std::malloc()`,
+`std::realloc()`, and `std::free()`.
+
+****/
+
+// ALLOCATE ( u -- a-addr ior )
+void memAllocate() {
+    int size;
+    Sl(1);
+    size = (S0 + (sizeof(stackitem) - 1)) / sizeof(stackitem);
+    
+    stackitem * p = (stackitem *)malloc(size);
+    if (p) {
+        S0 = p;
+        Push = 0;
+    }
+    else {
+        S0 = 0;
+        Push = -1;
+    }
+}
+
+// RESIZE ( a-addr1 u -- a-addr2 ior )
+void memResize() {
+    Sl(2);
+//	Hpc(S1);
+    int size = S0;
+    stackitem addr = S1;
+    stackitem* p = realloc(addr, size);
+    if (p) {
+        S0 = 0;
+        S1 = p;
+    }
+    else {
+        S0 = -1;
+        S1 = 0;
+    }
+}
+
+// FREE ( a-addr -- ior )
+void memFree() {
+	Sl(1);
+//    int  addr = S0;
+    free(S0);
+    S0 = 0;
+}
+
+
 
 prim P_allot()			      /* Allocate heap bytes */
 {
@@ -875,7 +937,7 @@ prim P_comma()			      /* Store one item on heap */
 prim P_cbang()			      /* Store byte value into address */
 {
     Sl(2);
-    Hpc(S0);
+//    Hpc(S0);
     *((unsigned char *) S0) = S1;
     Pop2;
 }
@@ -883,7 +945,7 @@ prim P_cbang()			      /* Store byte value into address */
 prim P_cat()			      /* Fetch byte value from address */
 {
     Sl(1);
-    Hpc(S0);
+//    Hpc(S0);
     S0 = *((unsigned char *) S0);
 }
 
@@ -1429,15 +1491,15 @@ prim P_tan()			      /* Tangent */
 prim P_dot()			      /* Print top of stack, pop it */
 {
     Sl(1);
-    V printf(base == 16 ? "%lX" : "%ld ", S0);
+    V printf(base == 16 ? "%lX " : "%ld ", S0);
     Pop;
 }
 
 prim P_question()		      /* Print value at address */
 {
     Sl(1);
-    Hpc(S0);
-    V printf(base == 16 ? "%lX" : "%ld ", *((stackitem *) S0));
+//    Hpc(S0);
+    V printf(base == 16 ? "%lX " : "%ld ", *((stackitem *) S0));
     Pop;
 }
 
@@ -1455,7 +1517,7 @@ prim P_dots()			      /* Print entire contents of stack */
         V printf("Empty.");
     else {
 	for (tsp = stack; tsp < stk; tsp++) {
-            V printf(base == 16 ? "%lX" : "%ld ", *tsp);
+            V printf(base == 16 ? "%lX " : "%ld ", *tsp);
 	}
     }
 }
@@ -2279,7 +2341,9 @@ Exported void P_dodoes()	      /* Execute indirect call on method */
 
     /* Push the address of this word's body as the argument to the
        DOES> clause. */
+// printf("dodoes:addr: %p ip: %p", (stackitem) (((stackitem *) curword) + Dictwordl), ip);
     Push = (stackitem) (((stackitem *) curword) + Dictwordl);
+// printf("dodoes:addr from stack: %p ", S0 );
 }
 
 prim P_does()			      /* Specify method for word */
@@ -2436,6 +2500,7 @@ prim P_find()			      /* Look up word in dictionary */
     So(1);
     Hpc(S0);
     V strcpy(tokbuf, (char *) S0);    /* Use built-in token buffer... */
+//	printf("find: %s\n", tokbuf);
     dw = lookup(tokbuf);              /* So ucase() in lookup() doesn't wipe */
 				      /* the token on the stack */
     if (dw != NULL) {
@@ -2618,6 +2683,13 @@ prim P_brackcompile()		      /* Force compilation of immediate word */
     cbrackpend = True;		      /* Set [COMPILE] pending */
 }
 
+/****
+    
+    "' (lit)     constant '(lit)",
+    ": literal   '(lit) , , ; immediate",
+    
+****/
+
 prim P_literal()		      /* Compile top of stack as literal */
 {
     Compiling;
@@ -2677,6 +2749,226 @@ prim P_fwdresolve()		      /* Emit forward jump offset */
 }
 
 #endif /* COMPILERW */
+
+// my words
+
+prim s_word(){
+    Sl(0);
+	int bl = S0; Pop;
+    char *sinstr = instream;	      /* Stack input stream */
+	int i=0;
+int l=0;
+//int len=0;
+//    Sl(1);
+//    So(1);
+//    Hpc(S0);
+//    V strcpy(tokbuf, (char *) sinstr);    /* Use built-in token buffer... */
+//	i = token(&instream);
+	i = token(&sinstr);
+	switch(i){
+	  case TokNull :
+		break;
+	  case TokWord :
+//printf("word: tokword: addr %d, len=%d", &tokbuf, strlen(tokbuf));
+// Push = (stackitem) ((char *) &tokbuf);
+// Hstore = tokbuf;
+// Push = &sinstr;
+//		Push = hptr;	
+
+//len = strlen(tokbuf);
+//tokbuf[len] = '\0';
+//len = strlen(tokbuf);
+//printf("word:tkname=%s len=%d ", tokbuf, len );
+//printf("word:len=%d", len);
+		l = (strlen(tokbuf)  + sizeof(stackitem)) / sizeof(stackitem);
+			Ho(l);
+			*((char *) hptr) = l;  /* Store in-line skip length */
+			V strcpy(((char *) hptr) , tokbuf);
+//hptr[len-1] = '\0';
+//printf("word: %s len %d", hptr, strlen(hptr));
+			Push = hptr;
+// Push = l;
+			hptr += l;
+// Push = hptr;
+		break;
+	  case TokInt :
+		break;
+	  case TokReal :
+		break;
+	  case TokString :
+		break;
+	}
+//	printf( "word: %s\n", tokbuf ); // получил 
+    instream = sinstr;		      /* Unstack input stream */
+}
+
+// CELLS ( n1 -- n2 )
+void s_cells() {
+    Sl(1)
+    S0 *= CellSize;
+}
+
+
+// U< ( u1 u2 -- flag )
+void s_uLessThan() {
+    stackitem t;
+
+    Sl(2 * Realsize);
+    t = (REAL1 < REAL0) ? Truth : Falsity;
+    Realpop2;
+    Push = t;
+}
+
+prim s_char(){
+    char *sinstr = instream;	      /* Stack input stream */
+	int i=0;
+//    Sl(1);
+//    So(1);
+//    Hpc(S0);
+
+
+//    V strcpy(tokbuf, (char *) sinstr);    /* Use built-in token buffer... */
+//	i = token(&instream);
+	i = token(&sinstr);
+//	printf("i=%d", i);
+//	printf( "s_char: char: %c\n", tokbuf[0]); // получил имя файла
+	Push = tokbuf[0];
+
+//	V strcpy(fn, tokbuf);
+
+    instream = sinstr;		      /* Unstack input stream */
+
+}
+prim s_bracket_char(){
+    Compiling;
+    char *sinstr = instream;	      /* Stack input stream */
+	int i=0;
+//    Sl(1);
+//    So(1);
+//    Hpc(S0);
+
+
+//    V strcpy(tokbuf, (char *) sinstr);    /* Use built-in token buffer... */
+//	i = token(&instream);
+	i = token(&sinstr);
+	printf("i=%d", i);
+	printf( "bracket_char: [char]: %c\n", tokbuf[0]); // получил имя файла
+	Push = tokbuf[0];
+
+//	V strcpy(fn, tokbuf);
+
+    instream = sinstr;		      /* Unstack input stream */
+
+}
+
+prim s_bl(){
+    So(1);
+//	printf( " " );
+    Push = ' ';
+
+}
+
+prim s_emit(){
+    Sl(1);
+    So(1);
+//    Hpc(S0);
+//    V strcpy(tokbuf, (char *) S0);    /* Use built-in token buffer... */
+	printf( "%c", S0 ); // получил имя файла
+	Pop;
+}
+
+prim s_base(){
+  So(1);
+  base = S0;
+  Pop;
+}
+
+// ( c-addr ch n -- )
+// адрес массива, сколько байт, чем
+
+prim s_fill(){
+    So(3);
+
+//    auto ch = static_cast<Char>(*dTop); pop();
+//    auto length = SIZE_T(*dTop); pop();
+//    auto caddr = CHARPTR(*dTop); pop();
+//    std::fill(caddr, caddr + length, S0);
+// fill(S2, S2 + S1, S0);
+memset((char*)S2, S0, S1);
+Pop; 
+Pop; 
+Pop;
+}
+
+prim s_tonum(){
+  So(2);
+  int len=0;
+  // int shift=0;
+  char* tstr;
+  char *nstr;
+  nstr = S0;
+  tstr = nstr;
+  double num=0;
+  len = strlen(nstr);
+  num = strtod(nstr, &nstr);
+  //shift = &tstr + len - &nstr;
+
+  S0 = nstr;
+// printf("to_nunm: %s %f\n", nstr, num);
+  S1 = num;
+//  Push = &tstr;
+//  Push = &nstr;
+//  Push = (nstr - tstr);
+  Push = len - (nstr - tstr);
+}
+
+prim s_included(){
+// check string in steck
+    Sl(1);
+    So(1);
+    Hpc(S0);
+    V strcpy(tokbuf, (char *) S0);    /* Use built-in token buffer... */
+	Pop;
+	printf( "included: filename: %s\n", tokbuf ); // получил имя файла
+	int stat;
+	FILE* fp;
+	char fn[132];
+	V strcpy(fn, tokbuf);
+	  fp = fopen(fn, "r");
+	if (fn == NULL){
+	  V fprintf(stderr, "Unable to open include file %s\n", tokbuf);
+//	  return 1;
+	}
+	stat = atl_load(fp);
+
+}
+
+prim s_include () {
+    char *sinstr = instream;	      /* Stack input stream */
+	int i=0;
+//    Sl(1);
+//    So(1);
+//    Hpc(S0);
+
+
+//    V strcpy(tokbuf, (char *) sinstr);    /* Use built-in token buffer... */
+//	i = token(&instream);
+	i = token(&sinstr);
+	printf( "include: filename: %s len %d i=%d\n", tokbuf , strlen(tokbuf), i); // получил имя файла
+	int stat;
+	FILE* fp;
+	char fn[132];
+	V strcpy(fn, tokbuf);
+	  fp = fopen(fn, "r");
+	if (fn == NULL){
+	  V fprintf(stderr, "Unable to open include file %s\n", tokbuf);
+	  return 1;
+	}
+	stat = atl_load(fp);
+    instream = sinstr;		      /* Unstack input stream */
+
+}
+
 
 /*  Table of primitive words  */
 
@@ -2949,7 +3241,20 @@ static struct primfcn primt[] = {
     {"0FSEEK", P_fseek},
     {"0FLOAD", P_fload},
 #endif /* FILEIO */
-
+    {"0INCLUDE", s_include},
+    {"0INCLUDED", s_included},
+    {"0BL", s_bl},
+    {"0EMIT", s_emit},
+    {"0CHAR", s_char},
+    {"0U<", s_uLessThan},
+    {"0CELLS", s_cells},
+    {"0WORD", s_word},
+    {"0ALLOCATE", memAllocate},
+    {"0FREE", memFree},
+    {"0RESIZE", memResize},
+    {"0BASE", s_base},
+    {"0FILL", s_fill},
+    {"0>NUM", s_tonum},
 #ifdef EVALUATE
     {"0EVALUATE", P_evaluate},
 #endif /* EVALUATE */
@@ -2962,8 +3267,8 @@ static struct primfcn primt[] = {
 		     allocated word items, we get one buffer for all
 		     the items and link them internally within the buffer. */
 
-Exported void atl_primdef(pt)
-  struct primfcn *pt;
+void atl_primdef(struct primfcn* pt)
+//  struct primfcn *pt;
 {
     struct primfcn *pf = pt;
     dictword *nw;
@@ -3142,28 +3447,28 @@ static void exword(wp)
     curword = wp;
 #ifdef TRACE
     if (atl_trace) {
-        V printf("\nTrace: %s ", curword->wname + 1);
+	  V printf("\n exword first: Trace: %s ", curword->wname + 1);
     }
 #endif /* TRACE */
     (*curword->wcode)();	      /* Execute the first word */
     while (ip != NULL) {
 #ifdef BREAK
 #ifdef Keybreak
-	Keybreak();		      /* Poll for asynchronous interrupt */
+	    Keybreak();		      /* Poll for asynchronous interrupt */
 #endif
-	if (broken) {		      /* Did we receive a break signal */
-            trouble("Break signal");
-	    evalstat = ATL_BREAK;
-	    break;
-	}
+		if (broken) {		      /* Did we receive a break signal */
+		  trouble("Break signal");
+		  evalstat = ATL_BREAK;
+		  break;
+		}
 #endif /* BREAK */
-	curword = *ip++;
+		curword = *ip++;
 #ifdef TRACE
-	if (atl_trace) {
-            V printf("\nTrace: %s ", curword->wname + 1);
-	}
+		if (atl_trace) {
+		  V printf("\n exword next: Trace: %s ", curword->wname + 1);
+		}
 #endif /* TRACE */
-	(*curword->wcode)();	      /* Execute the next word */
+		(*curword->wcode)();	      /* Execute the next word */
     }
     curword = NULL;
 }
@@ -3282,7 +3587,10 @@ void atl_init()
 	heaptop = heap + atl_heaplen;
 
 	/* Now that dynamic memory is up and running, allocate constants
-	   and variables built into the system.  */
+	   and variables built into the system.  
+Теперь, когда динамическая память запущена, выделите константы
+   и переменные, встроенные в систему
+*/
 
 #ifdef FILEIO
 	{   static struct {
@@ -3584,7 +3892,11 @@ int atl_eval(sp)
 
 			/* Pass 1.  Rip through the dictionary to make sure
 				    this word is not past the marker that
-				    guards against forgetting too much. */
+				    guards against forgetting too much. 
+Пройдите 1. Пролистайте словарь, чтобы убедиться, 
+что это слово не проходит мимо маркера, 
+который защищает не дает забыть слишком много
+*/
 
 			while (dw != NULL) {
 			    if (dw == dictprot) {
@@ -3603,7 +3915,13 @@ int atl_eval(sp)
 				    items until we encounter the target
                                     of the FORGET.  Release each item's
 				    name buffer and dechain it from the
-				    dictionary list. */
+				    dictionary list. 
+Пройдите 2. Пройдите назад через элементы словаря, 
+пока мы не столкнемся с целью ЗАБЫТЬ. 
+Освободите буфер имени каждого элемента и 
+освободите его от списка словаря.
+
+*/
 
 			if (di != NULL) {
 			    do {

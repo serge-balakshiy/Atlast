@@ -50,10 +50,20 @@ prim pleibniz()
     SREAL0(sum * 4.0);
 }
 
+prim pmyhi();
+
+prim pmyhi()
+{
+  Push = 1;
+  Push = 2;
+  printf("My privet from atl");
+}
+
 static struct primfcn timep[] = {
     {"0TIME",   ptime},
     {"0HHMMSS", phhmmss},
     {"0LEIBNIZ", pleibniz},
+    {"0MYHI",   pmyhi},
     {NULL,      (codeptr) 0}
 };
 

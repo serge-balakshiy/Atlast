@@ -52,99 +52,99 @@ int main(argc, argv)
     PR("ATLAST 2.0 (2014-07-04) [64-bit] This program is in the public domain.\n");
     ifp = stdin;
     for (i = 1; i < argc; i++) {
-	char *cp, opt;
+	  char *cp, opt;
 
-	cp = argv[i];
-        if (*cp == '-') {
+	  cp = argv[i];
+	  if (*cp == '-') {
 	    opt = *(++cp);
 	    if (islower(opt))
-		opt = toupper(opt);
+		  opt = toupper(opt);
 	    switch (opt) {
 
-                case 'D':
-		    defmode = TRUE;
-		    break;
-
-                case 'H':
-		    atl_heaplen = atol(cp + 1);
-		    break;
-
-                case 'I':
-		    include[in++] = cp + 1;
-		    break;
-
-                case 'R':
-		    atl_rstklen = atol(cp + 1);
-		    break;
-
-                case 'S':
-		    atl_stklen = atol(cp + 1);
-		    break;
-
-                case 'T':
-		    atl_trace = TRUE;
-		    break;
-
-                case '?':
-                case 'U':
-                    PR("Usage:  ATLAST [options] [inputfile]\n");
-                    PR("        Options:\n");
-                    PR("           -D     Treat file as definitions\n");
-                    PR("           -Hn    Heap length n\n");
-                    PR("           -Ifile Include named definition file\n");
-                    PR("           -Rn    Return stack length n\n");
-                    PR("           -Sn    Stack length n\n");
-                    PR("           -T     Set TRACE mode\n");
-                    PR("           -U     Print this message\n");
-		    return 0;
+		case 'D':
+		  defmode = TRUE;
+		  break;
+		  
+		case 'H':
+		  atl_heaplen = atol(cp + 1);
+		  break;
+		  
+		case 'I':
+		  include[in++] = cp + 1;
+		  break;
+		  
+		case 'R':
+		  atl_rstklen = atol(cp + 1);
+		  break;
+		  
+		case 'S':
+		  atl_stklen = atol(cp + 1);
+		  break;
+		  
+		case 'T':
+		  atl_trace = TRUE;
+		  break;
+		  
+		case '?':
+		case 'U':
+		  PR("Usage:  ATLAST [options] [inputfile]\n");
+		  PR("        Options:\n");
+		  PR("           -D     Treat file as definitions\n");
+		  PR("           -Hn    Heap length n\n");
+		  PR("           -Ifile Include named definition file\n");
+		  PR("           -Rn    Return stack length n\n");
+		  PR("           -Sn    Stack length n\n");
+		  PR("           -T     Set TRACE mode\n");
+		  PR("           -U     Print this message\n");
+		  return 0;
 	    }
-	} else {
+	  } else {
 	    char fn[132];
-
+		
 	    if (fname) {
-                PR("Duplicate file name.\n");
-		return 1;
+		  PR("Duplicate file name.\n");
+		  return 1;
 	    }
 	    fname = TRUE;
 	    V strcpy(fn, cp);
-            if (strchr(fn, '.') == NULL)
-                V strcat(fn, ".atl");
-            ifp = fopen(fn, "r");
+		if (strchr(fn, '.') == NULL)
+		  V strcat(fn, ".atl");
+		ifp = fopen(fn, "r");
 	    if (ifp == NULL) {
-                V fprintf(stderr, "Unable to open file %s\n", fn);
-		return 1;
+		  V fprintf(stderr, "Unable to open file %s\n", fn);
+		  return 1;
 	    }
+	  }
 	}
-     }
 
     /* If any include files were named, load each in turn before
        we execute the program. */
 
     for (i = 0; i < in; i++) {
-	int stat;
-	char fn[132];
-	FILE *fp;
+	  int stat;
+	  char fn[132];
+	  FILE *fp;
 
-	V strcpy(fn, include[i]);
-        if (strchr(fn, '.') == NULL)
-            V strcat(fn, ".atl");
-	fp = fopen(fn,
+	  V strcpy(fn, include[i]);
+	  if (strchr(fn, '.') == NULL)
+		V strcat(fn, ".atl");
+	  fp = fopen(fn,
 #ifdef FBmode
-                        "rb"
+				 "rb"
 #else
-                        "r"
+				 "r"
 #endif
-		  );
-	if (fp == NULL) {
-            V fprintf(stderr, "Unable to open include file %s\n",
-		include[i]);
+				 );
+	  if (fp == NULL) {
+		V fprintf(stderr, "Unable to open include file %s\n",
+				  include[i]);
 	    return 1;
-	}
-	stat = atl_load(fp);
-	V fclose(fp);
-	if (stat != ATL_SNORM) {
-            V printf("\nError %d in include file %s\n", stat, include[i]);
-	}
+	  }
+	  stat = atl_load(fp);
+	  V fclose(fp);
+	  if (stat != ATL_SNORM) {
+		V printf("\nError %d in include file %s\n", stat, include[i]);
+	  }
     }
 
     /* Now that all the preliminaries are out of the way, fall into
@@ -152,23 +152,23 @@ int main(argc, argv)
 
     V signal(SIGINT, ctrlc);
     while (TRUE) {
-	char t[132];
+	  char t[132];
 
-	if (!fname)
-            V printf(atl_comment ? "(  " :  /* Show pending comment */
-		/* Show compiling state */
-                (((heap != NULL) && state) ? ":> " : "-> "));
-	if (fgets(t, 132, ifp) == NULL) {
+	  if (!fname)
+		V printf(atl_comment ? "(  " :  /* Show pending comment */
+				 /* Show compiling state */
+				 (((heap != NULL) && state) ? ":> " : "-> "));
+	  if (fgets(t, 132, ifp) == NULL) {
 	    if (fname && defmode) {
-		fname = defmode = FALSE;
-		ifp = stdin;
-		continue;
+		  fname = defmode = FALSE;
+		  ifp = stdin;
+		  continue;
 	    }
 	    break;
-	}
-	V atl_eval(t);
+	  }
+	  V atl_eval(t);
     }
     if (!fname)
-        V printf("\n");
+	  V printf("\n");
     return 0;
 }

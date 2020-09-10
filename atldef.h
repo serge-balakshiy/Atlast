@@ -1,3 +1,5 @@
+#ifndef ATLDEF_H
+#define ATLDEF_H
 /*
 
 			      A T L A S T
@@ -57,9 +59,14 @@ typedef dictword **rstackitem;
 /*  Primitive definition table entry  */
 
 struct primfcn {
-    char *pname;
+    char const* pname; //вставил const чтобы не было предупреждений
+// warning iso c++ forbids converting a string constant to ‘char*’ -wwrite-strings
+// из-за этого появилось одно предупреждение
+//atlast.c:3005:12: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
     codeptr pcode;
 };
+
+//typedef primfcn* pt;
 
 /*  Internal state marker item	*/
 
@@ -145,19 +152,40 @@ extern void P_create(), P_dodoes();
 #define stakunder   atl__Esu
 #define rstakunder  atl__Ersu
 #endif /* NOMANGLE */
-extern
+//extern
 #endif
-void stakover(), rstakover(), heapover(), badpointer(),
-     stakunder(), rstakunder();
+#ifdef __cplusplus
+extern "C" {
+#endif
+void stakover();
+void rstakover();
+void heapover();
+void badpointer();
+void stakunder();
+void rstakunder();
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /* Functions called by exported extensions. */
-extern void atl_primdef(), atl_error();
-extern dictword *atl_lookup(), *atl_vardef();
-extern stackitem *atl_body();
-extern int atl_exec();
+void atl_primdef(struct primfcn* pt);
+void atl_error(char*);
+dictword *atl_lookup();
+dictword *atl_vardef();
+stackitem *atl_body();
+int atl_exec();
 #ifdef EXPORT
-extern char *atl_fgetsp();
+char *atl_fgetsp();
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #ifdef MSDOS
@@ -239,7 +267,8 @@ extern char *atl_fgetsp();
 #define state  (*heap)		      /* Execution state is first heap word */
 
 #define prim static void	      /* Attributes of primitive functions */
-
+// Definition for cells
+#define CellSize (sizeof(atl_real))
 /*  Real number definitions (used only if REAL is configured).	*/
 
 #define Realsize (sizeof(atl_real)/sizeof(stackitem)) /* Stack cells / real */
@@ -267,3 +296,5 @@ extern char *atl_fgetsp();
 #define Isfile(x) Hpc(x); if (*((stackitem *)(x))!=FileSent) {V printf("\nNot a file\n");return;}
 #define FileD(x)  ((FILE *) *(((stackitem *) (x)) + 1))
 #define Isopen(x) if (FileD(x) == NULL) {V printf("\nFile not open\n");return;}
+
+#endif // ATLDEF_H
